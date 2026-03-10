@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.segnalazioni import router as segnalazioni_router
+from app.api.asset import router as asset_router
+from app.api.interventi import router as interventi_router
+import app.models
 
 from app.core.config import settings
 
@@ -21,6 +24,8 @@ app.add_middleware(
 )
 
 app.include_router(segnalazioni_router)
+app.include_router(asset_router)
+app.include_router(interventi_router)
 
 @app.get("/")
 async def root():

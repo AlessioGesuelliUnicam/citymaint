@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, date
 from decimal import Decimal
 from pydantic import BaseModel
+from geoalchemy2.shape import to_shape
 
 from app.models.enums import TipoAsset
 
@@ -37,3 +38,19 @@ class AssetResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_orm(cls, obj):
+        shape = to_shape(obj.geometry)
+        return cls(
+            id=obj.id,
+            type=obj.type,
+            name=obj.name,
+            latitude=shape.y,
+            longitude=shape.x,
+            installation_date=obj.installation_date,
+            useful_life_years=obj.useful_life_years,
+            health_score=obj.health_score,
+            notes=obj.notes,
+            created_at=obj.created_at,
+        )
