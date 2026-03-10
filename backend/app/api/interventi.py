@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 
+from app.api.deps import get_current_operatore
+from app.models.operatore import Operatore
+
 from app.core.database import get_db
 from app.schemas.intervento import InterventoCreate, InterventoResponse
 from app.services.intervento_service import InterventoService
@@ -13,6 +16,7 @@ router = APIRouter(prefix="/api/v1/interventi", tags=["interventi"])
 async def create_intervento(
     data: InterventoCreate,
     db: AsyncSession = Depends(get_db),
+    current_operatore: Operatore = Depends(get_current_operatore),
 ):
     intervento = await InterventoService.create(db, data)
     return InterventoResponse.model_validate(intervento)
@@ -23,6 +27,7 @@ async def get_intervento_list(
     page: int = 1,
     page_size: int = 20,
     db: AsyncSession = Depends(get_db),
+    current_operatore: Operatore = Depends(get_current_operatore),
 ):
     interventi = await InterventoService.get_list(db, page, page_size)
     return [InterventoResponse.model_validate(i) for i in interventi]
@@ -32,6 +37,7 @@ async def get_intervento_list(
 async def get_intervento(
     intervento_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_operatore: Operatore = Depends(get_current_operatore),
 ):
     intervento = await InterventoService.get_by_id(db, intervento_id)
     if intervento is None:
