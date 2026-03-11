@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.api.deps import get_current_operatore
+from app.models.operatore import Operatore
 from app.schemas.segnalazione import SegnalazioneCreate, SegnalazioneResponse
 from app.services.segnalazione_service import SegnalazioneService
 
@@ -15,6 +17,17 @@ async def create_segnalazione(
 ):
     segnalazione = await SegnalazioneService.create(db, data)
     return SegnalazioneResponse.from_orm(segnalazione)
+
+
+@router.get("/", response_model=list[SegnalazioneResponse])
+async def get_segnalazione_list(
+    page: int = 1,
+    page_size: int = 20,
+    db: AsyncSession = Depends(get_db),
+    current_operatore: Operatore = Depends(get_current_operatore),
+):
+    segnalazioni = await SegnalazioneService.get_list(db, page, page_size)
+    return [SegnalazioneResponse.from_orm(s) for s in segnalazioni]
 
 
 @router.get("/{unique_code}", response_model=SegnalazioneResponse)
