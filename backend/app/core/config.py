@@ -19,7 +19,7 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
-    
+
     # Sicurezza
     SECRET_KEY: str = "cambia_questa_chiave_in_produzione"
     ALGORITHM: str = "HS256"
@@ -32,10 +32,19 @@ class Settings(BaseSettings):
     # AI
     ANTHROPIC_API_KEY: str = ""
 
+    # Email
+    EMAIL_ENABLED: bool = False
+    EMAIL_PROVIDER: str = "smtp"  # smtp | sendgrid | resend
+    EMAIL_FROM: str = "noreply@comune.tolentino.mc.it"
+    EMAIL_FROM_NAME: str = "Comune di Tolentino — CityMaint"
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
 
-class Config:
+    class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-        
+
 settings = Settings()
