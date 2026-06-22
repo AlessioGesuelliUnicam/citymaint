@@ -50,4 +50,4 @@ node_modules/
 .next/
 dist/
 build/
-*.local
+*.localCLAUDE.md
