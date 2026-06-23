@@ -1,13 +1,19 @@
+import logging
 import uuid
 import random
 import string
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.models.segnalazione import Segnalazione
 from app.models.enums import StatoSegnalazione
 from app.schemas.segnalazione import SegnalazioneCreate, SegnalazioneUpdate
 from app.services.email_service import EmailService
+from app.services.ai_service import AIService
+
+logger = logging.getLogger(__name__)
 
 
 class SegnalazioneService:
@@ -39,6 +45,42 @@ class SegnalazioneService:
         )
 
         db.add(segnalazione)
+        await db.flush()
+        await db.refresh(segnalazione)
+
+        # Conta segnalazioni entro 50m negli ultimi 30gg (EPSG:32633 = UTM 33N, usa metri)
+        try:
+            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+            nearby_result = await db.execute(
+                select(func.count(Segnalazione.id)).where(
+                    func.ST_DWithin(
+                        func.ST_Transform(Segnalazione.position, 32633),
+                        func.ST_Transform(
+                            func.ST_GeomFromText(point_wkt, 4326), 32633
+                        ),
+                        50.0,
+                    ),
+                    Segnalazione.created_at >= thirty_days_ago,
+                    Segnalazione.id != segnalazione.id,
+                )
+            )
+            numero_vicine = nearby_result.scalar() or 0
+        except Exception as e:
+            logger.warning("[AI] Query PostGIS segnalazioni vicine fallita: %s", e)
+            numero_vicine = 0
+
+        ai = AIService()
+        cat = await ai.categorizza(data.description)
+        prio = await ai.calcola_priorita(
+            descrizione=data.description,
+            categoria=cat.categoria.value,
+            numero_segnalazioni_vicine=numero_vicine,
+            giorni_apertura=0,
+            vicino_zona_sensibile=False,
+        )
+
+        segnalazione.ai_suggested_category = cat.categoria.value
+        segnalazione.ai_priority_score = prio.score
         await db.flush()
         await db.refresh(segnalazione)
 

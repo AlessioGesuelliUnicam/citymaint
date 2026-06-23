@@ -31,6 +31,9 @@ class Settings(BaseSettings):
 
     # AI
     ANTHROPIC_API_KEY: str = ""
+    AI_PROVIDER: str = "anthropic"  # "anthropic" oppure "ollama"
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3.1:latest"
 
     # Email
     EMAIL_ENABLED: bool = False
